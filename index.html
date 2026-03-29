@@ -18,19 +18,28 @@
     }
   </style>
 
-  <!-- 引入 React 與 ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- 引入 React 與 ReactDOM (鎖定穩定版本) -->
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
   
+  <!-- 引入 prop-types (Recharts 相依套件，避免線上環境報錯) -->
+  <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  
+  <!-- 引入 Recharts (鎖定穩定版本) -->
+  <script crossorigin src="https://unpkg.com/recharts@2.12.3/umd/Recharts.js"></script>
+
   <!-- 引入 Babel 讓瀏覽器可以直接編譯 JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- 引入 Recharts -->
-  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
 </head>
 <body class="bg-slate-50">
   
-  <div id="root"></div>
+  <div id="root">
+    <!-- 預設載入畫面，避免 Babel 轉譯期間出現全白畫面導致誤判 -->
+    <div class="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
+      <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <div class="text-2xl font-bold text-slate-600 animate-pulse mt-4">圖表與數據載入中，請稍候...</div>
+    </div>
+  </div>
 
   <script type="text/babel">
     const { useState } = React;
@@ -84,7 +93,7 @@
       { name: '南段總計', value: 97 },
     ];
 
-    // 新增：年代趨勢資料
+    // 年代趨勢資料
     const temporalData = [
       { decade: '1970s', '<3.5微震': 18, '3.5-3.9': 4, '4.0-4.4': 0, '4.5-4.9': 2, '>=5.0': 0 },
       { decade: '1980s', '<3.5微震': 52, '3.5-3.9': 9, '4.0-4.4': 3, '4.5-4.9': 0, '>=5.0': 0 },
@@ -162,135 +171,135 @@
             </div>
 
             {/* 內容區域 */}
-          <div className="bg-white p-6 md:p-10 rounded-2xl shadow-xl min-h-[500px]">
-            
-            {/* 空間特徵 Tab */}
-            {activeTab === 'spatial' && (
-              <div className="space-y-8 animate-in">
-                <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">📍 空間分佈：北段活躍，中段極度空白</h3>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                  <div className="space-y-6 text-xl md:text-2xl leading-relaxed text-slate-700">
-                    <p>
-                      將斷層帶分為三段來看，呈現明顯的<strong className="text-red-600">「北熱、中南冷」</strong>空間不均勻現象。
-                    </p>
-                    <ul className="space-y-4 list-none">
-                      <li className="flex gap-3"><ChevronRight className="w-6 h-6 text-blue-500 shrink-0 mt-1"/> <div><strong>北段：</strong> M4.0~4.5 事件佔全區 75%，歷史上唯一的規模5以上地震(2012年)也發生於此，最為活躍。</div></li>
-                      <li className="flex gap-3 bg-red-50 p-3 rounded-lg border border-red-200"><ChevronRight className="w-6 h-6 text-red-500 shrink-0 mt-1"/> <div><strong>中段 (本次震央)：</strong> 典型<strong className="text-red-700">地震空白區 (Seismic Gap)</strong>。M≥4 事件極少(僅4次)，與北段形成強烈對比。</div></li>
-                      <li className="flex gap-3"><ChevronRight className="w-6 h-6 text-blue-500 shrink-0 mt-1"/> <div><strong>南段：</strong> 中小地震數量與中段相近，大震同樣偏少。</div></li>
-                    </ul>
-                  </div>
+            <div className="bg-white p-6 md:p-10 rounded-2xl shadow-xl min-h-[500px]">
+              
+              {/* 空間特徵 Tab */}
+              {activeTab === 'spatial' && (
+                <div className="space-y-8 animate-in">
+                  <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">📍 空間分佈：北段活躍，中段極度空白</h3>
                   
-                  {/* 互動圖表 */}
-                  <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200">
-                      <h4 className="text-center text-xl font-bold mb-4 text-slate-600">各區段歷史地震規模分佈 (點擊圖例可篩選)</h4>
-                      <div className="h-[350px] w-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                    <div className="space-y-6 text-xl md:text-2xl leading-relaxed text-slate-700">
+                      <p>
+                        將斷層帶分為三段來看，呈現明顯的<strong className="text-red-600">「北熱、中南冷」</strong>空間不均勻現象。
+                      </p>
+                      <ul className="space-y-4 list-none">
+                        <li className="flex gap-3"><ChevronRight className="w-6 h-6 text-blue-500 shrink-0 mt-1"/> <div><strong>北段：</strong> M4.0~4.5 事件佔全區 75%，歷史上唯一的規模5以上地震(2012年)也發生於此，最為活躍。</div></li>
+                        <li className="flex gap-3 bg-red-50 p-3 rounded-lg border border-red-200"><ChevronRight className="w-6 h-6 text-red-500 shrink-0 mt-1"/> <div><strong>中段 (本次震央)：</strong> 典型<strong className="text-red-700">地震空白區 (Seismic Gap)</strong>。M≥4 事件極少(僅4次)，與北段形成強烈對比。</div></li>
+                        <li className="flex gap-3"><ChevronRight className="w-6 h-6 text-blue-500 shrink-0 mt-1"/> <div><strong>南段：</strong> 中小地震數量與中段相近，大震同樣偏少。</div></li>
+                      </ul>
+                    </div>
+                    
+                    {/* 互動圖表 */}
+                    <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200">
+                        <h4 className="text-center text-xl font-bold mb-4 text-slate-600">各區段歷史地震規模分佈 (點擊圖例可篩選)</h4>
+                        <div className="h-[350px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={regionData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                              <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
+                              <XAxis dataKey="name" tick={{fontSize: 14, fontWeight: 'bold'}} />
+                              <YAxis tick={{fontSize: 14}} />
+                              <RechartsTooltip 
+                                contentStyle={{ fontSize: '16px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                itemStyle={{ fontWeight: 'bold' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '16px', paddingTop: '10px' }} />
+                              <Bar dataKey=">=5.0" stackId="a" fill="#7f1d1d" />
+                              <Bar dataKey="4.5-4.9" stackId="a" fill="#dc2626" />
+                              <Bar dataKey="4.0-4.4" stackId="a" fill="#f97316" />
+                              <Bar dataKey="3.5-3.9" stackId="a" fill="#fbbf24" />
+                              <Bar dataKey="<3.5微震" stackId="a" fill="#3b82f6" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 時間特徵 Tab */}
+              {activeTab === 'temporal' && (
+                <div className="space-y-8 animate-in">
+                  <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">⏱️ 時間特徵：11年沉寂與微震增溫</h3>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                    <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200">
+                      <h4 className="text-center text-xl font-bold mb-4 text-slate-600">歷年(每十年)地震規模趨勢</h4>
+                      <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={regionData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                          <BarChart data={temporalData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
-                            <XAxis dataKey="name" tick={{fontSize: 14, fontWeight: 'bold'}} />
+                            <XAxis dataKey="decade" tick={{fontSize: 14, fontWeight: 'bold'}} />
                             <YAxis tick={{fontSize: 14}} />
-                            <RechartsTooltip 
-                              contentStyle={{ fontSize: '16px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                              itemStyle={{ fontWeight: 'bold' }}
-                            />
-                            <Legend wrapperStyle={{ fontSize: '16px', paddingTop: '10px' }} />
+                            <RechartsTooltip contentStyle={{ fontSize: '16px', borderRadius: '8px' }} itemStyle={{ fontWeight: 'bold' }} />
+                            <Legend wrapperStyle={{ fontSize: '14px', paddingTop: '10px' }} />
                             <Bar dataKey=">=5.0" stackId="a" fill="#7f1d1d" />
                             <Bar dataKey="4.5-4.9" stackId="a" fill="#dc2626" />
                             <Bar dataKey="4.0-4.4" stackId="a" fill="#f97316" />
                             <Bar dataKey="3.5-3.9" stackId="a" fill="#fbbf24" />
                             <Bar dataKey="<3.5微震" stackId="a" fill="#3b82f6" />
-                        </BarChart>
-                      </ResponsiveContainer>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6 text-xl md:text-2xl leading-relaxed text-slate-700">
+                      <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                        <h4 className="font-bold text-blue-700 mb-2">中段的長期空白 (Seismic Gap)</h4>
+                        <p>大地震主要集中在 1990-2010 年代。<strong>中段自 2015 年以來，已近 11 年完全沒有 M≥4 的地震</strong>，呈現極度的平靜。</p>
+                      </div>
+                      
+                      <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-orange-500">
+                        <h4 className="font-bold text-orange-700 mb-2">近期微震訊號 (2025-2026)</h4>
+                        <p>雖然大震沉寂，但 <strong>2026年2月發生了兩次 M3.0+ 地震</strong>（與本次震央極近），顯示中段的微震活動正在增溫，為此次 M4.7 的重要前兆訊號。</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* 時間特徵 Tab */}
-            {activeTab === 'temporal' && (
-              <div className="space-y-8 animate-in">
-                <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">⏱️ 時間特徵：11年沉寂與微震增溫</h3>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                  <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200">
-                    <h4 className="text-center text-xl font-bold mb-4 text-slate-600">歷年(每十年)地震規模趨勢</h4>
-                    <div className="h-[300px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={temporalData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
-                          <XAxis dataKey="decade" tick={{fontSize: 14, fontWeight: 'bold'}} />
-                          <YAxis tick={{fontSize: 14}} />
-                          <RechartsTooltip contentStyle={{ fontSize: '16px', borderRadius: '8px' }} itemStyle={{ fontWeight: 'bold' }} />
-                          <Legend wrapperStyle={{ fontSize: '14px', paddingTop: '10px' }} />
-                          <Bar dataKey=">=5.0" stackId="a" fill="#7f1d1d" />
-                          <Bar dataKey="4.5-4.9" stackId="a" fill="#dc2626" />
-                          <Bar dataKey="4.0-4.4" stackId="a" fill="#f97316" />
-                          <Bar dataKey="3.5-3.9" stackId="a" fill="#fbbf24" />
-                          <Bar dataKey="<3.5微震" stackId="a" fill="#3b82f6" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6 text-xl md:text-2xl leading-relaxed text-slate-700">
-                    <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
-                      <h4 className="font-bold text-blue-700 mb-2">中段的長期空白 (Seismic Gap)</h4>
-                      <p>大地震主要集中在 1990-2010 年代。<strong>中段自 2015 年以來，已近 11 年完全沒有 M≥4 的地震</strong>，呈現極度的平靜。</p>
-                    </div>
-                    
-                    <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-orange-500">
-                      <h4 className="font-bold text-orange-700 mb-2">近期微震訊號 (2025-2026)</h4>
-                      <p>雖然大震沉寂，但 <strong>2026年2月發生了兩次 M3.0+ 地震</strong>（與本次震央極近），顯示中段的微震活動正在增溫，為此次 M4.7 的重要前兆訊號。</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 前兆意義 Tab */}
-            {activeTab === 'warning' && (
-              <div className="space-y-8 animate-in">
-                <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">🚨 觀測警示：空白區填補與大震防範</h3>
-                
-                <p className="text-xl md:text-2xl leading-relaxed text-slate-700 mb-6">
-                  在長達 11 年沒有 M≥4 活動的中段「地震空白區」，突然發生規模 4.7 地震，並伴隨上個月的微震活動，我們必須從正反兩面來評估：
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-2xl border border-green-200 shadow-md transform hover:-translate-y-1 transition-transform">
-                    <h4 className="text-2xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                      <Activity className="w-8 h-8" />
-                      正面意義：應力釋放 (補白)
-                    </h4>
-                    <p className="text-xl text-green-900 leading-relaxed">
-                      這次 M4.7 正好填補了中段的長期空白，是一次<strong>「補白事件 (Gap-filling event)」</strong>。它可能釋放了該區塊累積的部分應力，有助於平衡全斷層的能量，短期內若餘震有限，則降低了立即發生大震的風險。
-                    </p>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-8 rounded-2xl border border-red-200 shadow-md transform hover:-translate-y-1 transition-transform">
-                    <h4 className="text-2xl font-bold text-red-800 mb-4 flex items-center gap-2">
-                      <ShieldAlert className="w-8 h-8" />
-                      警示意義：孕育大震前兆
-                    </h4>
-                    <p className="text-xl text-red-900 leading-relaxed">
-                      潮州斷層全長具備引發 <strong>M7+ 特徵地震</strong>的潛力。中段活動從「極靜」轉為「有釋放」，且 2 月已有微小前震，若此 M4.7 只是破壞了局部阻礙 (Asperity)，可能會引發後續更大規模的主震。
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-10 bg-slate-800 text-white p-8 rounded-2xl shadow-xl text-center">
-                  <h4 className="text-3xl font-bold mb-4 text-yellow-400">未來關鍵觀察指標 (GPS與微震群)</h4>
-                  <p className="text-xl md:text-2xl text-slate-200 leading-relaxed max-w-4xl mx-auto">
-                    後續應密切追蹤中段 <strong>M≥3 事件頻率、b值變化及 GPS 應變速率</strong>。若出現更多 M3+ 集群或位置更集中，代表斷層帶正加速「解鎖」，需高度警戒大面積錯動的可能性！
+              {/* 前兆意義 Tab */}
+              {activeTab === 'warning' && (
+                <div className="space-y-8 animate-in">
+                  <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">🚨 觀測警示：空白區填補與大震防範</h3>
+                  
+                  <p className="text-xl md:text-2xl leading-relaxed text-slate-700 mb-6">
+                    在長達 11 年沒有 M≥4 活動的中段「地震空白區」，突然發生規模 4.7 地震，並伴隨上個月的微震活動，我們必須從正反兩面來評估：
                   </p>
-                </div>
-              </div>
-            )}
 
-          </div>
-        </main>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-2xl border border-green-200 shadow-md transform hover:-translate-y-1 transition-transform">
+                      <h4 className="text-2xl font-bold text-green-800 mb-4 flex items-center gap-2">
+                        <Activity className="w-8 h-8" />
+                        正面意義：應力釋放 (補白)
+                      </h4>
+                      <p className="text-xl text-green-900 leading-relaxed">
+                        這次 M4.7 正好填補了中段的長期空白，是一次<strong>「補白事件 (Gap-filling event)」</strong>。它可能釋放了該區塊累積的部分應力，有助於平衡全斷層的能量，短期內若餘震有限，則降低了立即發生大震的風險。
+                      </p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-red-50 to-red-100 p-8 rounded-2xl border border-red-200 shadow-md transform hover:-translate-y-1 transition-transform">
+                      <h4 className="text-2xl font-bold text-red-800 mb-4 flex items-center gap-2">
+                        <ShieldAlert className="w-8 h-8" />
+                        警示意義：孕育大震前兆
+                      </h4>
+                      <p className="text-xl text-red-900 leading-relaxed">
+                        潮州斷層全長具備引發 <strong>M7+ 特徵地震</strong>的潛力。中段活動從「極靜」轉為「有釋放」，且 2 月已有微小前震，若此 M4.7 只是破壞了局部阻礙 (Asperity)，可能會引發後續更大規模的主震。
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-10 bg-slate-800 text-white p-8 rounded-2xl shadow-xl text-center">
+                    <h4 className="text-3xl font-bold mb-4 text-yellow-400">未來關鍵觀察指標 (GPS與微震群)</h4>
+                    <p className="text-xl md:text-2xl text-slate-200 leading-relaxed max-w-4xl mx-auto">
+                      後續應密切追蹤中段 <strong>M≥3 事件頻率、b值變化及 GPS 應變速率</strong>。若出現更多 M3+ 集群或位置更集中，代表斷層帶正加速「解鎖」，需高度警戒大面積錯動的可能性！
+                    </p>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </main>
 
           <footer className="text-center p-6 text-slate-500 text-lg border-t mt-12">
             <p>資料來源：潮州斷層地震活動資料 (1973-2026) | 本網頁為互動式分析報告</p>
