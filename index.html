@@ -1,225 +1,214 @@
-import React, { useState } from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell
-} from 'recharts';
-import { AlertTriangle, Map, Clock, ShieldAlert, Activity, ChevronRight } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>潮州斷層地震活動分析 (1973-2026)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 selection:bg-blue-200">
+    <div id="root"></div>
 
-// --- 資料準備 ---
-const regionData = [
-  { name: '北段 (Lat>22.60)', '<3.5微震': 161, '3.5-3.9': 55, '4.0-4.4': 12, '4.5-4.9': 2, '>=5.0': 1 },
-  { name: '中段 (今日震央)', '<3.5微震': 62, '3.5-3.9': 16, '4.0-4.4': 2, '4.5-4.9': 2, '>=5.0': 0 },
-  { name: '南段 (Lat<22.45)', '<3.5微震': 78, '3.5-3.9': 15, '4.0-4.4': 2, '4.5-4.9': 2, '>=5.0': 0 },
-];
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { 
+            BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip: RechartsTooltip, Legend, ResponsiveContainer,
+            PieChart, Pie, Cell 
+        } = Recharts;
 
-const totalMagData = [
-  { name: '北段總計', value: 231 },
-  { name: '中段總計', value: 82 },
-  { name: '南段總計', value: 97 },
-];
+        // --- 資料準備 ---
+        const regionData = [
+            { name: '北段', '<3.5微震': 161, '3.5-3.9': 55, '4.0-4.4': 12, '4.5-4.9': 2, '>=5.0': 1 },
+            { name: '中段 (今日)', '<3.5微震': 62, '3.5-3.9': 16, '4.0-4.4': 2, '4.5-4.9': 2, '>=5.0': 0 },
+            { name: '南段', '<3.5微震': 78, '3.5-3.9': 15, '4.0-4.4': 2, '4.5-4.9': 2, '>=5.0': 0 },
+        ];
 
-const COLORS = ['#ef4444', '#f59e0b', '#10b981'];
+        const totalMagData = [
+            { name: '北段總計', value: 231 },
+            { name: '中段總計', value: 82 },
+            { name: '南段總計', value: 97 },
+        ];
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('spatial');
+        const COLORS = ['#ef4444', '#f59e0b', '#10b981'];
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-200">
-      
-      {/* 頂部橫幅 */}
-      <header className="bg-slate-900 text-white p-6 md:p-10 shadow-lg">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 flex items-center gap-3">
-            <Activity className="w-10 h-10 md:w-12 md:h-12 text-red-500 animate-pulse" />
-            潮州斷層地震活動分析 (1973-2026)
-          </h1>
-          <p className="text-xl md:text-2xl text-slate-300">
-            針對 2026/03/29 中段規模 4.7 地震之特別報告
-          </p>
-        </div>
-      </header>
+        // 自定義 Icon 組件以適應瀏覽器環境
+        const Icon = ({ name, className }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} className={className}></i>;
+        };
 
-      <main className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-8">
-        
-        {/* 警示橫幅 */}
-        <div className="bg-red-50 border-l-8 border-red-500 p-6 md:p-8 rounded-r-2xl shadow-md flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="bg-red-100 p-4 rounded-full">
-            <AlertTriangle className="w-12 h-12 md:w-16 md:h-16 text-red-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-red-800 mb-2">
-              ⚠️ 震情快報：罕見的中段地震
-            </h2>
-            <p className="text-lg md:text-2xl text-red-900 leading-relaxed">
-              今日（3/29）於 <strong>東經 120.64, 北緯 22.46</strong> 發生規模 <strong>4.7</strong> 地震。
-              此區域為過去數十年來極少發生地震的<strong>「相對空白區」</strong>，需特別留意後續發展！
-            </p>
-          </div>
-        </div>
+        function App() {
+            const [activeTab, setActiveTab] = useState('spatial');
 
-        {/* 互動式導覽標籤 */}
-        <div className="flex flex-wrap gap-4 border-b-2 border-slate-200 pb-2">
-          {[
-            { id: 'spatial', icon: Map, label: '空間特徵 (北熱中南冷)' },
-            { id: 'temporal', icon: Clock, label: '時間特徵 (沉寂被打破)' },
-            { id: 'warning', icon: ShieldAlert, label: '前兆意義與防範' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-4 rounded-t-xl text-xl font-bold transition-all duration-300 ${
-                activeTab === tab.id 
-                  ? 'bg-blue-600 text-white shadow-lg translate-y-1' 
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 border-b-0'
-              }`}
-            >
-              <tab.icon className="w-6 h-6" />
-              {tab.label}
-            </button>
-          ))}
-        </div>
+            return (
+                <div className="min-h-screen">
+                    {/* 頂部橫幅 */}
+                    <header className="bg-slate-900 text-white p-6 md:p-10 shadow-lg">
+                        <div className="max-w-6xl mx-auto">
+                            <h1 className="text-3xl md:text-5xl font-bold mb-4 flex items-center gap-3">
+                                <Icon name="activity" className="w-10 h-10 md:w-12 md:h-12 text-red-500 animate-pulse" />
+                                潮州斷層地震活動分析 (1973-2026)
+                            </h1>
+                            <p className="text-xl md:text-2xl text-slate-300">
+                                針對 2026/03/29 中段規模 4.7 地震之特別報告
+                            </p>
+                        </div>
+                    </header>
 
-        {/* 內容區域 */}
-        <div className="bg-white p-6 md:p-10 rounded-2xl shadow-xl min-h-[500px]">
-          
-          {/* 空間特徵 Tab */}
-          {activeTab === 'spatial' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">📍 空間分佈：北段活躍，中段為空白區</h3>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                <div className="space-y-6 text-xl md:text-2xl leading-relaxed text-slate-700">
-                  <p>
-                    將斷層帶分為三段來看，呈現明顯的<strong className="text-red-600">「北熱、中南冷」</strong>現象。
-                  </p>
-                  <ul className="space-y-4 list-none">
-                    <li className="flex gap-3"><ChevronRight className="text-blue-500 shrink-0 mt-1"/> <strong>北段：</strong> 釋放了該區近 60% 的地震能量，歷史上唯一的規模5以上地震也發生於此。</li>
-                    <li className="flex gap-3 bg-red-50 p-3 rounded-lg border border-red-200"><ChevronRight className="text-red-500 shrink-0 mt-1"/> <strong>中段 (本次震央)：</strong> 過去 50 年來，不僅沒有規模 5 以上地震，連微小地震的數量也僅有北段的三分之一。</li>
-                    <li className="flex gap-3"><ChevronRight className="text-blue-500 shrink-0 mt-1"/> <strong>南段：</strong> 地震數量與中段相近，同樣屬於較不活躍的區域。</li>
-                  </ul>
+                    <main className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-8">
+                        {/* 警示橫幅 */}
+                        <div className="bg-red-50 border-l-8 border-red-500 p-6 md:p-8 rounded-r-2xl shadow-md flex flex-col md:flex-row items-start md:items-center gap-6">
+                            <div className="bg-red-100 p-4 rounded-full">
+                                <Icon name="alert-triangle" className="w-12 h-12 md:w-16 md:h-16 text-red-600" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl md:text-3xl font-bold text-red-800 mb-2">
+                                    ⚠️ 震情快報：罕見的中段地震
+                                </h2>
+                                <p className="text-lg md:text-2xl text-red-900 leading-relaxed">
+                                    今日（3/29）於 <strong>東經 120.64, 北緯 22.46</strong> 發生規模 <strong>4.7</strong> 地震。
+                                    此區域為過去數十年來極少發生地震的<strong>「相對空白區」</strong>，需特別留意後續發展！
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 互動式導覽標籤 */}
+                        <div className="flex flex-wrap gap-4 border-b-2 border-slate-200 pb-2">
+                            {[
+                                { id: 'spatial', icon: 'map', label: '空間特徵' },
+                                { id: 'temporal', icon: 'clock', label: '時間特徵' },
+                                { id: 'warning', icon: 'shield-alert', label: '前兆意義' }
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-2 px-6 py-4 rounded-t-xl text-xl font-bold transition-all duration-300 ${
+                                        activeTab === tab.id 
+                                            ? 'bg-blue-600 text-white shadow-lg translate-y-1' 
+                                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 border-b-0'
+                                    }`}
+                                >
+                                    <Icon name={tab.icon} className="w-6 h-6" />
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* 內容區域 */}
+                        <div className="bg-white p-6 md:p-10 rounded-2xl shadow-xl min-h-[500px]">
+                            {activeTab === 'spatial' && (
+                                <div className="space-y-8 fade-in">
+                                    <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">📍 空間分佈：北段活躍，中段為空白區</h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                                        <div className="space-y-6 text-xl md:text-2xl leading-relaxed text-slate-700">
+                                            <p>呈現明顯的<strong className="text-red-600">「北熱、中南冷」</strong>現象。</p>
+                                            <ul className="space-y-4">
+                                                <li className="flex gap-3"><Icon name="chevron-right" className="text-blue-500 mt-1"/> <strong>北段：</strong> 歷史地震最密集區。</li>
+                                                <li className="flex gap-3 bg-red-50 p-3 rounded-lg border border-red-200"><Icon name="chevron-right" className="text-red-500 mt-1"/> <strong>中段：</strong> 過去 50 年極度靜止。</li>
+                                                <li className="flex gap-3"><Icon name="chevron-right" className="text-blue-500 mt-1"/> <strong>南段：</strong> 同樣屬於較不活躍的區域。</li>
+                                            </ul>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200 h-[400px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={regionData}>
+                                                    <CartesianGrid strokeDasharray="3 3" />
+                                                    <XAxis dataKey="name" />
+                                                    <YAxis />
+                                                    <RechartsTooltip />
+                                                    <Legend />
+                                                    <Bar dataKey=">=5.0" stackId="a" fill="#7f1d1d" />
+                                                    <Bar dataKey="4.5-4.9" stackId="a" fill="#dc2626" />
+                                                    <Bar dataKey="4.0-4.4" stackId="a" fill="#f97316" />
+                                                    <Bar dataKey="3.5-3.9" stackId="a" fill="#fbbf24" />
+                                                    <Bar dataKey="<3.5微震" stackId="a" fill="#3b82f6" />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'temporal' && (
+                                <div className="space-y-8 fade-in">
+                                    <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">⏱️ 時間特徵：長年沉寂被打破</h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                                        <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200 h-[350px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={totalMagData}
+                                                        cx="50%" cy="50%"
+                                                        innerRadius={60} outerRadius={100}
+                                                        dataKey="value"
+                                                        label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                    >
+                                                        {totalMagData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                        <div className="space-y-6 text-xl">
+                                            <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                                                <h4 className="font-bold text-blue-700">常態性釋放 (北段)</h4>
+                                                <p>北段具備持續蠕變特徵，能量較不易積累。</p>
+                                            </div>
+                                            <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-orange-500">
+                                                <h4 className="font-bold text-orange-700">長時間沉寂 (中南段)</h4>
+                                                <p>這次 4.7 規模地震，正式打破了中段長期的平靜狀態。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'warning' && (
+                                <div className="space-y-8 fade-in">
+                                    <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">🚨 觀測警示：前兆意義</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="bg-green-50 p-8 rounded-2xl border border-green-200">
+                                            <h4 className="text-2xl font-bold text-green-800 mb-4 flex items-center gap-2">情境一：應力釋放</h4>
+                                            <p className="text-lg">若餘震規模逐漸遞減，則為偶發能量釋放。</p>
+                                        </div>
+                                        <div className="bg-red-50 p-8 rounded-2xl border border-red-200">
+                                            <h4 className="text-2xl font-bold text-red-800 mb-4 flex items-center gap-2">情境二：前震可能</h4>
+                                            <p className="text-lg">長期空白區突發地震，可能是主破裂面開始「解鎖」的徵兆。</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-10 bg-slate-800 text-white p-8 rounded-2xl text-center">
+                                        <h4 className="text-3xl font-bold mb-4 text-yellow-400">未來 1~2 週關鍵觀察</h4>
+                                        <p className="text-xl">請密切觀察震央附近是否出現密集的微小地震群（群震）。</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    <footer className="text-center p-6 text-slate-500 border-t mt-12">
+                        <p>資料來源：潮州斷層地震活動資料 (1973-2026) | 本網頁為互動式分析報告</p>
+                    </footer>
                 </div>
-                
-                {/* 互動圖表 */}
-                <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200">
-                  <h4 className="text-center text-xl font-bold mb-4 text-slate-600">各區段歷史地震規模分佈 (點擊圖例可篩選)</h4>
-                  <div className="h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={regionData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
-                        <XAxis dataKey="name" tick={{fontSize: 16, fontWeight: 'bold'}} />
-                        <YAxis tick={{fontSize: 14}} />
-                        <RechartsTooltip 
-                          contentStyle={{ fontSize: '18px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                          itemStyle={{ fontWeight: 'bold' }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: '16px', paddingTop: '10px' }} />
-                        <Bar dataKey=">=5.0" stackId="a" fill="#7f1d1d" />
-                        <Bar dataKey="4.5-4.9" stackId="a" fill="#dc2626" />
-                        <Bar dataKey="4.0-4.4" stackId="a" fill="#f97316" />
-                        <Bar dataKey="3.5-3.9" stackId="a" fill="#fbbf24" />
-                        <Bar dataKey="<3.5微震" stackId="a" fill="#3b82f6" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            );
+        }
 
-          {/* 時間特徵 Tab */}
-          {activeTab === 'temporal' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">⏱️ 時間特徵：長年沉寂被打破</h3>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                <div className="bg-slate-50 p-4 rounded-xl shadow-inner border border-slate-200">
-                  <h4 className="text-center text-xl font-bold mb-4 text-slate-600">三段地震總活動比例</h4>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={totalMagData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={80}
-                          outerRadius={120}
-                          paddingAngle={5}
-                          dataKey="value"
-                          label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          labelStyle={{fontSize: '16px', fontWeight: 'bold'}}
-                        >
-                          {totalMagData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip contentStyle={{ fontSize: '18px' }}/>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="space-y-6 text-xl md:text-2xl leading-relaxed text-slate-700">
-                  <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
-                    <h4 className="font-bold text-blue-700 mb-2">常態性釋放 (北段)</h4>
-                    <p>北段在過去 50 年間，規模 3 到 4 的地震幾乎年年發生，顯示該段斷層具有持續蠕變或常態性釋放應力的特徵，能量較不易大規模積累。</p>
-                  </div>
-                  
-                  <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-orange-500">
-                    <h4 className="font-bold text-orange-700 mb-2">長時間沉寂 (中南段)</h4>
-                    <p>過去在中南段發生規模較大的地震後，該區域往往會陷入長達十數年、甚至數十年的平靜期。<strong>這次 4.7 規模的地震，正式打破了中段長期的極度平靜狀態。</strong></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 前兆意義 Tab */}
-          {activeTab === 'warning' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h3 className="text-3xl font-bold border-b pb-4 text-slate-800">🚨 觀測警示：前兆意義與防範建議</h3>
-              
-              <p className="text-xl md:text-2xl leading-relaxed text-slate-700 mb-6">
-                在一個長達數十年沒有明顯活動的「地震空白區」（Seismic Gap），突然發生規模 4.7 的中型地震，地震學上有兩種可能的發展方向，必須提高警覺：
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-2xl border border-green-200 shadow-md transform hover:-translate-y-1 transition-transform">
-                  <h4 className="text-2xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                    <Activity className="w-8 h-8" />
-                    情境一：應力微小釋放 (較樂觀)
-                  </h4>
-                  <p className="text-xl text-green-900 leading-relaxed">
-                    空白區代表斷層處於「鎖定」狀態。這次的地震可能是該區域達到臨界點後的<strong>局部破裂</strong>。如果後續跟隨的只是「規模逐漸遞減」的餘震，則代表這是一次偶發的能量釋放，稍解了該區的應力累積。
-                  </p>
-                </div>
-
-                <div className="bg-gradient-to-br from-red-50 to-red-100 p-8 rounded-2xl border border-red-200 shadow-md transform hover:-translate-y-1 transition-transform">
-                  <h4 className="text-2xl font-bold text-red-800 mb-4 flex items-center gap-2">
-                    <ShieldAlert className="w-8 h-8" />
-                    情境二：大地震的前震 (需防範)
-                  </h4>
-                  <p className="text-xl text-red-900 leading-relaxed">
-                    過去國內外許多案例顯示，長期空白區內突發中型地震，可能是斷層帶主破裂面開始<strong>「解鎖」</strong>的徵兆。這類地震會破壞斷層面上的阻礙，從而引發後續更大規模的主震。
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-10 bg-slate-800 text-white p-8 rounded-2xl shadow-xl text-center">
-                <h4 className="text-3xl font-bold mb-4 text-yellow-400">未來 1~2 週關鍵觀察指標</h4>
-                <p className="text-xl md:text-2xl text-slate-200 leading-relaxed max-w-4xl mx-auto">
-                  請密切觀察震央附近是否出現<strong className="text-white bg-slate-700 px-2 py-1 rounded">密集的微小地震群（群震）</strong>。
-                  若活動不但沒有衰減反而增加，甚至震央有「向北或向南遷移」的趨勢，請務必提高警覺，防範斷層進一步錯動！
-                </p>
-              </div>
-            </div>
-          )}
-
-        </div>
-      </main>
-
-      <footer className="text-center p-6 text-slate-500 text-lg border-t mt-12">
-        <p>資料來源：潮州斷層地震活動資料 (1973-2026) | 本網頁為互動式分析報告</p>
-      </footer>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
